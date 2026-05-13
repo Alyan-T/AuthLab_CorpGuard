@@ -745,10 +745,10 @@ window.showTab = async function(id) {
                 const table = document.getElementById('bac-salary-table');
                 if(!table || !employeesData.length) return;
                 table.innerHTML = `
-                    <thead><tr><th>Employee</th><th>Department</th><th>Annual Salary</th><th>Access Level</th></tr></thead>
+                    <thead><tr><th>Employee</th><th>Department</th><th>Monthly Salary</th><th>Access Level</th></tr></thead>
                     <tbody>${employeesData.map(e => `
                         <tr>
-                            <td>${e.u==='Shahmeer H'?e.u:(e.u==='admin'?'Sarah Chen':e.u)}</td>
+                            <td>${e.u==='Shahmeer H'?e.u:(e.u==='admin'?'Alyan Tariq':e.u)}</td>
                             <td>${e.r==='admin'?'C-Suite':'Marketing'}</td>
                             <td style="color:var(--warn);font-family:var(--mono)">${e.r==='admin'?'PKR.185,000':'PKR.42,000'}</td>
                             <td><span class="role-pill ${e.r}">${e.r}</span></td>
