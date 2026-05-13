@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CorpGuard Employee Portal - AuthLab</title>
+    <link rel="icon" href="main.jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="threat-bar" id="threatBar"></div>
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <div class="logo">
+            <div class="logo-mark">
+                <svg viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8.5 1.5L2 5V9C2 12.5 4.8 15.8 8.5 16.5C12.2 15.8 15 12.5 15 9V5L8.5 1.5Z" fill="#080b10" />
+                    <path fill-rule="evenodd" d="M8.5 3.5L3.5 6.3V9C3.5 11.6 5.7 13.9 8.5 14.6C11.3 13.9 13.5 11.6 13.5 9V6.3L8.5 3.5ZM7.5 10.5L5.7 8.7L6.8 7.6L7.5 8.3L10.2 5.6L11.3 6.7L7.5 10.5Z" fill="#00e5b4" />
+                </svg>
+            </div>
+            Corp<em>Guard</em> · AuthLab
+        </div>
+        <div class="topbar-right">
+            <div class="user-pill">
+                <div class="user-avatar">SH</div>
+                Shahmeer H
+            </div>
+            <div class="mode-toggle">
+                <button class="mode-btn vuln active" id="btnVuln" onclick="setMode('vuln')"><i class="fa-solid fa-exclamation-triangle"></i> Vulnerable</button>
+                <button class="mode-btn secure" id="btnSecure" onclick="setMode('secure')"><i class="fa-solid fa-check-circle"></i> Secure</button>
+            </div>
+            <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        </div>
+    </div>
+
+    <!-- NAV -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showTab('sql')" id="nav-sql">
+            <i class="fa-solid fa-bolt"></i> SQL Injection <span class="tab-num">01</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('bac')" id="nav-bac">
+            <i class="fa-solid fa-unlock"></i> Access Control <span class="tab-num">02</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('xss')" id="nav-xss">
+            <i class="fa-solid fa-user-secret"></i> XSS & Session <span class="tab-num">03</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('crypto')" id="nav-crypto">
+            <i class="fa-solid fa-lock"></i> Cryptography <span class="tab-num">04</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('ai')" id="nav-ai">
+            <i class="fa-solid fa-robot"></i> AI Anomaly <span class="tab-num">05</span>
+        </button>
+        <button class="nav-tab" onclick="showTab('authlab')" id="nav-authlab">
+            <i class="fa-solid fa-key"></i> AuthLab · PKI/2FA/JWT <span class="tab-num">06</span>
+        </button>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+        <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="loading-spinner" id="sidebarLoading"><i class="fa-solid fa-spinner fa-spin"></i> Loading scenario data...</div>
+            <div class="error-state" id="sidebarError" style="display:none"><i class="fa-solid fa-circle-exclamation"></i> Failed to load data.</div>
+            <div id="sidebarContent" style="display:none"></div>
+        </aside>
+        <div class="content-area">
+            <!-- TAB 1: SQL Injection -->
+            <div class="tab-content active" id="tab-sql">
+                <div class="page-head">
+                    <div class="page-head-left">
+                        <h1><i class="fa-solid fa-database"></i> Employee Login</h1>
+                        <p>CorpGuard HR portal authentication gateway</p>
+                    </div>
+                </div>
+                <div id="sql-badge" class="status-badge vuln"><span class="s-dot"></span>Vulnerable Mode Active</div>
+                <div id="sql-alert-v" class="alert danger">
+                    <span class="alert-ico"><i class="fa-solid fa-circle-exclamation"></i></span>
+                    <div>Try entering <code class="d">' OR '1'='1</code> as the username with any password to bypass login entirely.</div>
+                </div>
+                <div id="sql-alert-s" class="alert secure" style="display:none">
+                    <span class="alert-ico"><i class="fa-solid fa-check-circle"></i></span>
+                    <div>PDO Prepared Statements active. SQL payloads are treated as literal data — they cannot modify query structure.</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Sign In</div>
+                    <div class="card-sub">Access your employee dashboard — CorpGuard Portal v4.2</div>
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input class="form-input mono" id="sql-user" placeholder="e.g.  ' OR '1'='1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="sql-pass" placeholder="Any password">
+                    </div>
+                    <button class="btn-primary" onclick="doSQL()">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                    </button>
+                    <div class="result attack" id="sql-r-attack">
+                        <div class="result-head"><i class="fa-solid fa-bolt"></i> Attack Succeeded — Authentication Bypassed</div>
+                        <p style="color:#fca5a5">The injected SQL modified the query's WHERE clause to always evaluate as true. The database returned its first row — the admin account — without any password validation.</p>
+                        <br><p style="color:#fca5a5">Logged in as: <strong style="color:var(--warn)">admin</strong></p>
+                    </div>
+                    <div class="result success" id="sql-r-secure">
+                        <div class="result-head"><i class="fa-solid fa-shield-check"></i> Blocked — PDO Prepared Statement</div>
+                        <p style="color:#6ee7d4">Input was bound as a parameter after the query was compiled. The database searched for a user literally named <code>' OR '1'='1</code> — no such user exists.</p>
+                    </div>
+                    <div class="result blocked" id="sql-r-legit">
+                        <div class="result-head"><i class="fa-solid fa-xmark"></i> Invalid Credentials</div>
+                        <p style="color:#fcd34d">No matching username/password pair found in the database.</p>
+                    </div>
+                </div>
+
+                <div class="code-wrap">
+                    <div class="code-label" id="sql-code-lbl">PHP — Vulnerable String Concatenation</div>
+                    <div class="code-block"><pre id="sql-code-pre" class="loading-spinner">Loading code example...</pre></div>
+                </div>
+            </div>
+
+            <!-- TAB 2: Access Control -->
+            <div class="tab-content" id="tab-bac">
+                <div class="page-head">
+                    <div class="page-head-left">
+                        <h1><i class="fa-solid fa-id-card"></i> HR Dashboard</h1>
+                        <p>Employee profile &amp; compensation overview</p>
+                    </div>
+                </div>
+                <div id="bac-badge" class="status-badge vuln"><span class="s-dot"></span>Vulnerable Mode Active</div>
+                <div id="bac-alert-v" class="alert danger">
+                    <span class="alert-ico"><i class="fa-solid fa-circle-exclamation"></i></span>
+                    <div>Logged in as <strong>Shahmeer H</strong> (employee). The URL exposes a <code class="d">role=</code> parameter. Click the URL bar to tamper it and escalate privileges.</div>
+                </div>
+                <div id="bac-alert-s" class="alert secure" style="display:none">
+                    <span class="alert-ico"><i class="fa-solid fa-check-circle"></i></span>
+                    <div>Server-side session validation enforced. The <code>role=</code> URL parameter is ignored — role is read exclusively from <code>$_SESSION['user_role']</code>.</div>
+                </div>
+
+                <div class="url-bar" id="bacBar" onclick="doBAC()">
+                    <span class="lock"><i class="fa-solid fa-lock"></i></span>
+                    <span class="url-scheme">https://</span>
+                    <span class="url-path">corpguard.internal/profile.php</span>
+                    <span id="bacParam" class="url-param">?role=employee</span>
+                    <span class="url-hint"><i class="fa-solid fa-hand-pointer"></i> click to tamper</span>
+                </div>
+
+                <div class="card" style="max-width:520px">
+                    <div class="card-title">My Profile — <span id="bac-role-lbl">Employee View</span></div>
+                    <div class="card-sub">Authenticated as: <strong>Shahmeer H</strong> · Marketing Dept.</div>
+                    <table class="data-table">
+                        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                        <tbody>
+                            <tr><td>Full Name</td><td>Shahmeer H</td></tr>
+                            <tr><td>Department</td><td>Marketing</td></tr>
+                            <tr><td>Employee ID</td><td><code>EMP-0047</code></td></tr>
+                            <tr><td>Your Salary</td><td style="color:var(--accent);font-family:var(--mono)">PKR.42,000</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="salary-reveal" id="bac-reveal" style="display:none">
+                    <div class="salary-reveal-head"><i class="fa-solid fa-bolt"></i> IDOR Exploit — Full Salary DB Exposed via URL Manipulation</div>
+                    <p style="color:#fca5a5;font-size:12.5px;margin-bottom:14px">Changing <code class="d">?role=employee</code> → <code class="d">?role=admin</code> caused the PHP backend to trust the URL parameter and serve privileged data.</p>
+                    <table class="data-table" id="bac-salary-table"></table>
+                </div>
+
+                <div class="result success" id="bac-blocked" style="display:none;max-width:580px">
+                    <div class="result-head"><i class="fa-solid fa-shield-check"></i> Access Denied — Session Role Enforced</div>
+                    <p style="color:#6ee7d4">Server read <code>$_SESSION['user_role']</code> = <strong>'employee'</strong>. The URL parameter was completely ignored. No elevated data was queried.</p>
+                </div>
+
+                <div class="code-wrap">
+                    <div class="code-label" id="bac-code-lbl">PHP — Vulnerable URL-Trusted Access Control</div>
+                    <div class="code-block"><pre id="bac-code-pre" class="loading-spinner">Loading code example...</pre></div>
+                </div>
+            </div>
+
+            <!-- TAB 3: XSS -->
+            <div class="tab-content" id="tab-xss">
+                <div class="page-head">
+                    <div class="page-head-left">
+                        <h1><i class="fa-solid fa-comment"></i> Company Noticeboard</h1>
+                        <p>Internal announcements &amp; employee messages</p>
+                    </div>
+                </div>
+                <div id="xss-badge" class="status-badge vuln"><span class="s-dot"></span>Vulnerable Mode Active</div>
+                <div id="xss-alert-v" class="alert danger">
+                    <span class="alert-ico"><i class="fa-solid fa-circle-exclamation"></i></span>
+                    <div>Post a comment with <code class="d">&lt;script&gt;alert(document.cookie);&lt;/script&gt;</code>. When an admin views the board, their session cookie is stolen.</div>
+                </div>
+                <div id="xss-alert-s" class="alert secure" style="display:none">
+                    <span class="alert-ico"><i class="fa-solid fa-check-circle"></i></span>
+                    <div>Output sanitised with <code>htmlspecialchars()</code>. Cookies carry <code>HttpOnly</code> + <code>Secure</code> flags — JavaScript cannot read them.</div>
+                </div>
+
+                <div class="card" style="max-width:540px">
+                    <div class="card-title">Post a Comment</div>
+                    <div class="form-group" style="margin-bottom:12px">
+                        <label class="form-label">Your message</label>
+                        <input class="form-input mono" id="xss-input" placeholder="Try: <script>alert(document.cookie);</script>">
+                    </div>
+                    <button class="btn-primary" onclick="doXSS()"><i class="fa-solid fa-paper-plane"></i> Post to Noticeboard</button>
+                </div>
+
+                <ul class="notice-list" id="xss-board">
+                    <li class="notice-item">
+                        <div class="notice-meta">s.chen · 2 hours ago</div>
+                        <div class="notice-content">Reminder: Town Hall meeting this Friday at 2pm in Main Conference Room.</div>
+                    </li>
+                    <li class="notice-item">
+                        <div class="notice-meta">m.webb · 1 hour ago</div>
+                        <div class="notice-content">The new GlobalVPN client v3.1 has been deployed to all machines.</div>
+                    </li>
+                </ul>
+
+                <div class="code-wrap">
+                    <div class="code-label" id="xss-code-lbl">PHP — Vulnerable Raw Output &amp; Cookie Config</div>
+                    <div class="code-block"><pre id="xss-code-pre" class="loading-spinner">Loading code example...</pre></div>
+                </div>
+            </div>
+
+            <!-- TAB 4: Cryptography -->
+            <div class="tab-content" id="tab-crypto">
+                <div class="page-head">
+                    <div class="page-head-left">
+                        <h1><i class="fa-solid fa-shield"></i> IT Admin — Credentials Table</h1>
+                        <p>Employee credentials as stored in the database</p>
+                    </div>
+                </div>
+                <div id="crypto-badge" class="status-badge vuln"><span class="s-dot"></span>Vulnerable Mode Active</div>
+                <div id="crypto-alert-v" class="alert danger">
+                    <span class="alert-ico"><i class="fa-solid fa-circle-exclamation"></i></span>
+                    <div>Passwords are stored in <strong>plain text</strong>. Any database breach, rogue DBA, or backup leak instantly exposes every employee's credentials — including passwords reused on other services.</div>
+                </div>
+                <div id="crypto-alert-s" class="alert secure" style="display:none">
+                    <span class="alert-ico"><i class="fa-solid fa-check-circle"></i></span>
+                    <div>Passwords hashed with <strong>SHA-512</strong> before storage. The original password is computationally unrecoverable from the stored hash alone.</div>
+                </div>
+
+                <div style="overflow-x:auto;max-width:680px">
+                    <table class="data-table" id="crypto-table">
+                        <thead><tr><th>Username</th><th>Role</th><th>Stored Password</th><th>Last Login</th></tr></thead>
+                        <tbody id="crypto-tbody">
+                            <tr><td colspan="4" class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Loading employee data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="code-wrap">
+                    <div class="code-label" id="crypto-code-lbl">PHP — Vulnerable Plain Text Password Storage</div>
+                    <div class="code-block"><pre id="crypto-code-pre" class="loading-spinner">Loading code example...</pre></div>
+                </div>
+            </div>
+
+            <!-- TAB 5: AI Anomaly -->
+            <div class="tab-content" id="tab-ai">
+                <div class="page-head">
+                    <div class="page-head-left">
+                        <h1><i class="fa-solid fa-robot"></i> AI Login Anomaly Detection</h1>
+                        <p>Machine learning–powered threat analysis for authentication events</p>
+                    </div>
+                    <div class="ai-badge"><span class="ai-dot"></span>ML Model Active</div>
+                </div>
+                <div class="alert info">
+                    <span class="alert-ico"><i class="fa-solid fa-circle-info"></i></span>
+                    <div>The anomaly detection model analyses IP geolocation, login time deviation, user-agent fingerprint, and failed attempt velocity to assign a real-time risk score to each authentication event.</div>
+                </div>
+
+                <div class="ai-grid">
+                    <div class="ai-card"><div class="ai-card-title">Events (24h)</div><div class="ai-card-val">847</div><div class="ai-card-sub">+12% vs yesterday</div></div>
+                    <div class="ai-card"><div class="ai-card-title">Flagged High-Risk</div><div class="ai-card-val danger">3</div><div class="ai-card-sub">Require immediate review</div></div>
+                    <div class="ai-card"><div class="ai-card-title">Blocked Automatically</div><div class="ai-card-val warn">11</div><div class="ai-card-sub">Threshold score ≥ 0.85</div></div>
+                    <div class="ai-card"><div class="ai-card-title">Model Accuracy</div><div class="ai-card-val good">97.3%</div><div class="ai-card-sub">F1 score on validation set</div></div>
+                </div>
+
+                <button class="expand-btn" onclick="toggleDetail('ai-detail')"><i class="fa-solid fa-chevron-down"></i> View ML Feature Weights</button>
+                <div class="detail-panel" id="ai-detail">
+                    <div class="detail-row"><span class="k">Geo-velocity anomaly</span><span class="v ok">Weight: 0.34</span></div>
+                    <div class="detail-row"><span class="k">Login hour deviation (σ)</span><span class="v ok">Weight: 0.28</span></div>
+                    <div class="detail-row"><span class="k">User-agent fingerprint change</span><span class="v ok">Weight: 0.18</span></div>
+                    <div class="detail-row"><span class="k">Failed attempt rate (5 min)</span><span class="v bad">Weight: 0.12</span></div>
+                    <div class="detail-row"><span class="k">IP reputation (blacklist)</span><span class="v bad">Weight: 0.08</span></div>
+                    <div class="detail-row"><span class="k">Algorithm</span><span class="v">Gradient Boosted Decision Tree</span></div>
+                    <div class="detail-row"><span class="k">Training data</span><span class="v">2.1M login events (90 days)</span></div>
+                </div>
+
+                <div class="anomaly-list" id="anomaly-list"></div>
+
+                <div class="code-wrap" style="max-width:640px">
+                    <div class="code-label">Python — Anomaly Scoring (Pseudocode)</div>
+                    <div class="code-block"><pre id="ai-code-pre" class="loading-spinner">Loading code example...</pre></div>
+                </div>
+            </div>
+
+            <!-- TAB 6: AuthLab -->
+            <div class="tab-content" id="tab-authlab">
+                <div class="page-head">
+                    <div class="page-head-left">
+                        <h1><i class="fa-solid fa-key"></i> AuthLab — Authentication &amp; PKI Playground</h1>
+                        <p>JWT · 2FA · Digital Signatures · CSRF · Certificate Chain</p>
+                    </div>
+                    <div class="ai-badge"><span class="ai-dot"></span>PKI + MFA + JWT</div>
+                </div>
+                <div id="authlab-badge" class="status-badge vuln"><span class="s-dot"></span><i class="fa-solid fa-triangle-exclamation"></i> Vulnerable Mode Active — Attacks succeed</div>
+                <div id="authlab-alert-v" class="alert danger">
+                    <span class="alert-ico"><i class="fa-solid fa-circle-exclamation"></i></span>
+                    <div>In vulnerable mode: JWT accepts <code class="d">'none'</code> algorithm &amp; weak secrets; 2FA can be bypassed; CSRF tokens missing; PKI chain not validated.</div>
+                </div>
+                <div id="authlab-alert-s" class="alert secure" style="display:none">
+                    <span class="alert-ico"><i class="fa-solid fa-check-circle"></i></span>
+                    <div>Secure mode: JWT signature strict (HS256), CSRF tokens mandatory, WebAuthn/2FA enforced, PKI chain verified.</div>
+                </div>
+
+                <!-- 1. JWT Demo -->
+                <div class="card" style="max-width:560px">
+                    <div class="card-title"><i class="fa-solid fa-key"></i> JWT · Token Forgery &amp; Validation</div>
+                    <div class="card-sub">Attack: algorithm confusion / weak secret → Secure: strong HMAC + whitelist</div>
+                    <div class="form-group"><label class="form-label">User (subject)</label><input class="form-input" id="jwt-sub" value="admin"></div>
+                    <button class="btn-primary" onclick="generateJWT()"><i class="fa-solid fa-key"></i> Generate JWT (current mode)</button>
+                    <div class="token-preview" id="jwt-token-display">(no token generated)</div>
+                    <div class="form-group"><label class="form-label">Verify / Tampered Token</label><input class="form-input mono" id="jwt-verify-input" placeholder="Paste JWT..."></div>
+                    <button class="btn-primary" onclick="verifyJWT()"><i class="fa-solid fa-check-double"></i> Verify Signature &amp; Integrity</button>
+                    <div id="jwt-result" class="result" style="display:none"></div>
+                    <div class="code-block" style="margin-top:16px"><pre>// JWT attack: alg:none + empty signature bypasses verification (VULN mode)
+// SECURE: reject 'none', enforce HS256, strong secret.</pre></div>
+                </div>
+
+                <!-- 2. 2FA TOTP Demo -->
+                <div class="card" style="max-width:560px">
+                    <div class="card-title"><i class="fa-solid fa-mobile-screen-button"></i> Multi-Factor (TOTP) · Time-based OTP</div>
+                    <div class="card-sub">Attack: no 2FA enforcement → Secure: OTP validation required</div>
+                    <div class="flex-row">
+                        <div><strong>Shared secret:</strong> <code id="totp-secret">JBSWY3DPEHPK3PXP</code></div>
+                        <button class="btn-primary" style="width:auto;padding:6px 12px" onclick="regenerateTotpSecret()"><i class="fa-solid fa-rotate"></i> New Secret</button>
+                    </div>
+                    <div class="form-group"><label class="form-label">Current OTP (Google Authenticator style)</label><input class="form-input" id="totp-code" placeholder="6-digit code"></div>
+                    <button class="btn-primary" style="margin-top:6px" onclick="verifyTOTP()"><i class="fa-solid fa-shield-check"></i> Verify 2FA → Access Simulation</button>
+                    <div id="totp-result" class="result" style="display:none"></div>
+                    <div class="code-block" style="margin-top:12px"><pre>// In vulnerable mode: 2FA can be skipped; secure mode enforces OTP after password.</pre></div>
+                </div>
+
+                <!-- 3. Digital Signatures + PKI Chain -->
+                <div class="card" style="max-width:560px">
+                    <div class="card-title"><i class="fa-solid fa-signature"></i> Digital Signatures &amp; PKI Chain</div>
+                    <div class="card-sub">Sign document, verify tamper; Root CA → Intermediate → Server</div>
+                    <div class="form-group"><label class="form-label">Message / Contract</label><input class="form-input" id="sign-message" value="Transfer $10,000 to account 9945-8832"></div>
+                    <div class="flex-row">
+                        <button class="btn-primary" style="width:auto" onclick="generateKeyAndSign()"><i class="fa-solid fa-pen-to-square"></i> Generate Keypair &amp; Sign</button>
+                        <button class="btn-primary" style="width:auto;background:#2d3a4e" onclick="verifySignature()"><i class="fa-solid fa-check-circle"></i> Verify Signature</button>
+                    </div>
+                    <div id="signature-result" class="result" style="display:none"></div>
+                    <div class="pki-chain" id="pki-visualization">
+                        <div class="cert-card"><i class="fa-solid fa-certificate"></i> Root CA (Self-signed)<br>CN=CorpGuard Root</div>
+                        <div class="cert-card"><i class="fa-solid fa-file-signature"></i> Intermediate CA<br>Issued by Root</div>
+                        <div class="cert-card"><i class="fa-solid fa-server"></i> Server Cert (TLS)<br>Valid: 2025-2026</div>
+                    </div>
+                    <div class="alert info" style="margin-top:12px"><span><i class="fa-solid fa-lock"></i> Digital signature tamper detection: if message changed after signing, verification fails — protects integrity.</span></div>
+                </div>
+
+                <!-- 4. CSRF Protection Demo -->
+                <div class="card" style="max-width:560px">
+                    <div class="card-title"><i class="fa-solid fa-globe"></i> CSRF · Cross-Site Request Forgery</div>
+                    <div class="card-sub">Transfer funds — Attack: forged request (malicious site). Defense: CSRF token + SameSite cookie.</div>
+                    <div class="form-group"><label class="form-label">Transfer to account</label><input class="form-input" id="csrf-account" value="attacker_1337"></div>
+                    <div class="form-group"><label class="form-label">Amount ($)</label><input class="form-input" id="csrf-amount" value="5000"></div>
+                    <button class="btn-primary" onclick="performTransfer()"><i class="fa-solid fa-money-bill-transfer"></i> Execute Transfer</button>
+                    <div id="csrf-result" class="result" style="display:none"></div>
+                    <div class="alert info" style="margin-top:12px"><strong><i class="fa-solid fa-circle-info"></i> Attack simulation:</strong> In vulnerable mode, external site can POST to this endpoint without token. Secure mode requires <code>X-CSRF-Token</code> header.</div>
+                    <button class="expand-btn" onclick="simulateCSRFAttack()" style="margin-top:8px"><i class="fa-solid fa-fire"></i> Simulate malicious CSRF request (attack)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COOKIE POPUP -->
+    <div class="cookie-popup" id="cookiePopup">
+        <button class="cookie-close" onclick="document.getElementById('cookiePopup').classList.remove('show')"><i class="fa-solid fa-xmark"></i></button>
+        <div class="cookie-head"><i class="fa-solid fa-cookie-bite"></i> Session Cookie Stolen via XSS</div>
+        <div class="cookie-val" id="cookieVal"></div>
+        <div class="cookie-note">Attacker can use this token to impersonate admin without any credentials.</div>
+    </div>
+
+    <script>
+        (function() {
+            // ════════════════ GLOBAL STATE ════════════════
+            let mode = 'vuln';
+            let curTab = 'sql';
+            let bacToggled = false;
+            let scenariosData = {};
+            let phpCodeData = {};
+            let employeesData = [];
+
+            // ─── AuthLab state ──────────────────────────
+            let keyPair = null;
+            let totpSecret = 'JBSWY3DPEHPK3PXP';
+            let csrfTokenStore = (Math.random() * 1e18).toString(36);
+            const jwtWeakSecret = 'weaksecret';
+            const jwtStrongSecret = '0x7f9e2a1b8c4d6e0f3a5b7c9d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f';
+
+            // ════════════════ DATA FETCHING (simulated) ════════════════
+            async function fetchScenarios() {
+                return new Promise(resolve => {
+                    setTimeout(() => resolve({
+                        sql: {
+                            label: 'Topic 01 — SQL Injection',
+                            title: 'Login Authentication Bypass',
+                            desc: 'The login form concatenates user input directly into a SQL query string. An attacker can inject SQL syntax to completely bypass authentication.',
+                            vuln: { head:'The Vulnerability', body:'PHP string concatenation builds the query. Entering <code>\' OR \'1\'=\'1</code> closes the quote, appending an always-true condition that returns the first DB row (admin).' },
+                            fix: { head:'The Fix', body:'PDO Prepared Statements separate query structure from data. The SQL is compiled first; user input is bound as a parameter — it can never become executable SQL code.' },
+                            cvss: [['Attack Vector','Network','high'],['Complexity','Low','high'],['Privileges Required','None','high'],['CVSS Score','9.8 Critical','high']]
+                        },
+                        bac: {
+                            label:'Topic 02 — Broken Access Control', title:'IDOR: Privilege Escalation via URL', desc:'The profile endpoint trusts a URL parameter to determine the user\'s access level. Any employee can edit the URL to see admin-only data.',
+                            vuln:{ head:'The Vulnerability', body:'PHP reads <code>$_GET["role"]</code> directly to decide what data to serve. Changing <code>?role=employee</code> to <code>?role=admin</code> exposes the full salary database.' },
+                            fix:{ head:'The Fix', body:'The backend ignores the URL parameter entirely and reads the role from <code>$_SESSION[\'user_role\']</code>, server-controlled.' },
+                            cvss:[['Attack Vector','Network','high'],['Complexity','Low','high'],['Auth Required','Low','medium'],['CVSS Score','8.1 High','high']]
+                        },
+                        xss: {
+                            label:'Topic 03 — XSS & Session Hijacking', title:'Stored XSS → Cookie Theft', desc:'User-submitted content is echoed directly into the page as raw HTML. An attacker can inject JavaScript that executes in other users\' browser sessions.',
+                            vuln:{ head:'The Vulnerability', body:'PHP echoes the raw comment into the page. An injected <code>&lt;script&gt;</code> tag executes in the admin\'s browser, leaking their session cookie.' },
+                            fix:{ head:'The Fix', body:'Output is escaped with <code>htmlspecialchars()</code>, turning <code>&lt;</code> into <code>&amp;lt;</code>. Cookies carry <code>HttpOnly</code> and <code>Secure</code> flags.' },
+                            cvss:[['Attack Vector','Network','high'],['User Interaction','Required','medium'],['Scope','Changed','high'],['CVSS Score','8.3 High','high']]
+                        },
+                        crypto: {
+                            label:'Topic 04 — Cryptography', title:'Plaintext Password Storage', desc:'The IT admin views the credentials table. In vulnerable mode, a database breach instantly exposes every employee\'s password in readable form.',
+                            vuln:{ head:'The Vulnerability', body:'Passwords stored as <code>INSERT INTO users (password) VALUES (\'$pw\')</code>. A single breach exposes all accounts.' },
+                            fix:{ head:'The Fix', body:'Passwords are hashed using <code>hash(\'sha512\', $pw)</code> before storage. The 128-character hex string cannot be reversed.' },
+                            cvss:[['Confidentiality Impact','High','high'],['Recovery After Breach','Impossible','high'],['Integrity Impact','High','high'],['CVSS Score','7.5 High','high']]
+                        },
+                        ai: {
+                            label:'Topic 05 — AI/ML Bonus', title:'Login Anomaly Detection', desc:'A gradient-boosted classifier analyses each login event in real time, assigning a risk score based on geolocation, timing, device fingerprint, and prior failed attempts.',
+                            vuln:{ head:'Without AI Detection', body:'Credential stuffing attacks and brute-force attempts go undetected until significant damage is done.' },
+                            fix:{ head:'With AI Detection', body:'The ML model scores every login event within milliseconds. High-risk events (score ≥ 0.85) are automatically blocked and trigger a SOC alert.' },
+                            cvss:[['Model Accuracy','97.3%','low'],['False Positive Rate','0.4%','low'],['Avg Inference Time','~12ms','low'],['Events Blocked (24h)','11','medium']]
+                        },
+                        authlab: {
+                            label:'Topic 06 — Authentication & PKI', title:'AuthLab: JWT, 2FA, Signatures, CSRF', desc:'Full authentication security playground: JWT algorithm attack, TOTP bypass, digital signatures & PKI chain, CSRF token forgery/defense.',
+                            vuln:{ head:'Vulnerabilities present', body:'JWT alg:none acceptance, missing CSRF tokens, 2FA optional, weak secret acceptance — all exploitable.' },
+                            fix:{ head:'Defenses active', body:'Strict JWT validation, anti-CSRF tokens, mandatory 2FA, secure certificate chain with signature verification.' },
+                            cvss:[['Attack Surface','High','high'],['MFA Bypass','Critical','high'],['CSRF Impact','High','high'],['CVSS Score','9.1 Critical','high']]
+                        }
+                    }), 100);
+                });
+            }
+
+            async function fetchPhpCode() {
+    return new Promise(resolve => {
+        setTimeout(() => resolve({
+            sql: {
+                vuln: `<span class="cm">// <i class="fa-solid fa-xmark"></i>VULNERABLE — direct string concatenation</span>\n<span class="hl-bad">$q = "SELECT * FROM users WHERE username='$u' AND password='$p'";</span>\n<span class="hl-bad">$r = mysqli_query($conn, $q);</span>\n<span class="cm">// Input: username = ' OR '1'='1\n// Resulting query:</span>\n<span class="hl-bad">SELECT * FROM users WHERE username='' OR '1'='1' AND password=''</span>`,
+
+                secure: `<span class="cm">// <i class="fa-solid fa-check"></i> SECURE — PDO Prepared Statement</span>\n<span class="hl-good">$stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND password = ?");</span>\n<span class="hl-good">$stmt->execute([$username, $password]);</span>\n<span class="cm">// User input is bound as data — never interpreted as SQL.</span>`
+            },
+
+            bac: {
+                vuln: `<span class="cm">// <i class="fa-solid fa-xmark"></i> VULNERABLE — trusts client-supplied URL parameter</span>\n<span class="hl-bad">$role = $_GET['role'];</span>\n<span class="kw">if</span> ($role === <span class="str">'admin'</span>) {\n  <span class="hl-bad">$stmt = $pdo->query("SELECT * FROM employees");</span>\n  showFullSalaryTable($stmt);\n} <span class="kw">else</span> { showOwnProfile($userId); }`,
+
+                secure: `<span class="cm">// <i class="fa-solid fa-check"></i> SECURE — server-side session validation only</span>\n<span class="hl-good">$role = $_SESSION['user_role'];</span>\n<span class="kw">if</span> ($role === <span class="str">'admin'</span>) {\n  $stmt = $pdo->query(<span class="str">"SELECT * FROM employees"</span>);\n  showFullSalaryTable($stmt);\n} <span class="kw">else</span> { showOwnProfile($userId); }`
+            },
+
+            xss: {
+                vuln: `<span class="cm">// <i class="fa-solid fa-xmark"></i> VULNERABLE — raw echo + no cookie protection</span>\n<span class="hl-bad">echo "&lt;li&gt;" . $comment . "&lt;/li&gt;";</span>\n<span class="hl-bad">session_set_cookie_params(0, '/', '', false, false); // HttpOnly = false</span>`,
+
+                secure: `<span class="cm">// <i class="fa-solid fa-check"></i> SECURE — escape output + HttpOnly/Secure cookies</span>\n<span class="hl-good">echo "&lt;li&gt;" . htmlspecialchars($comment, ENT_QUOTES, 'UTF-8') . "&lt;/li&gt;";</span>\n<span class="hl-good">session_set_cookie_params(['httponly'=>true,'secure'=>true,'samesite'=>'Strict']);</span>`
+            },
+
+            crypto: {
+                vuln: `<span class="cm">// <i class="fa-solid fa-xmark"></i> VULNERABLE — plain text password storage</span>\n<span class="hl-bad">$stmt->execute([$username, $plaintext_password]);</span>`,
+
+                secure: `<span class="cm">// <i class="fa-solid fa-check"></i> SECURE — SHA-512 one-way hash</span>\n<span class="hl-good">$hashed = hash('sha512', $password);</span>\n<span class="hl-good">$stmt->execute([$username, $hashed]);</span>\n<span class="cm">// Verification: if (hash('sha512', $input) === $stored_hash)</span>`
+            }
+
+        }), 100);
+    });
+}
+
+            async function fetchEmployees() {
+            return new Promise(resolve => {
+                setTimeout(() => resolve([
+                    { u:'admin',     r:'admin',    pw:'admin686',  d:'2025-06-01' },
+                    { u:'Alyan T',   r:'admin',    pw:'alyant',    d:'2025-06-02' },
+                    { u:'Shahmeer H',r:'employee', pw:'chinioti',  d:'2025-06-03' },
+                    { u:'Sanial B',  r:'employee', pw:'boss123',   d:'2025-05-28' },
+                    { u:'Ali H',     r:'employee', pw:'Football99',d:'2025-05-30' },
+                ]), 100);
+            });
+        }
+
+            async function fetchAnomalies() {
+                return new Promise(resolve => {
+                    setTimeout(() => resolve([
+                        { flagged:true, icon:'<i class="fa-solid fa-circle-exclamation"></i>', user:'admin · 185.220.101.47', detail:'Geo-velocity impossible: Leeds → Minsk in 4 min. User-agent changed.', risk:0.97, level:'high' },
+                        { flagged:true, icon:'<i class="fa-solid fa-circle-exclamation"></i>', user:'Alyan T · 103.21.244.0', detail:'Login at 03:47 UTC — 4.2σ outside normal window. VPN exit node.', risk:0.91, level:'high' },
+                        { flagged:false, suspect:true, icon:'<i class="fa-solid fa-triangle-exclamation"></i>', user:'m.webb · 92.63.197.152', detail:'Login from new city (Glasgow vs usual London).', risk:0.62, level:'medium' },
+                        { flagged:false, icon:'<i class="fa-solid fa-check"></i>', user:'Shahmeer H · 81.132.40.22', detail:'Consistent IP block (Leeds, UK). No anomaly.', risk:0.04, level:'low' },
+                        { flagged:false, icon:'<i class="fa-solid fa-check"></i>', user:'Sanial B · 90.215.7.81', detail:'Consistent device, login at 09:15.', risk:0.07, level:'low' }
+                    ]), 100);
+                });
+            }
+
+            // ════════════════ UI HELPERS ════════════════
+            window.setMode = async function(m) {
+    mode = m;
+    document.getElementById('btnVuln').classList.toggle('active', m === 'vuln');
+    document.getElementById('btnSecure').classList.toggle('active', m === 'secure');
+    document.getElementById('threatBar').className = 'threat-bar' + (m === 'secure' ? ' secure' : '');
+    await refreshTab(curTab);
+};
+
+window.showTab = async function(id) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    document.getElementById('nav-' + id).classList.add('active');
+    curTab = id;
+    renderSidebar(id);
+    await refreshTab(id);
+    if (window.innerWidth <= 800) closeSidebar();
+};
+            window.toggleSidebar = function() {
+                document.getElementById('sidebar').classList.toggle('open');
+                document.getElementById('sidebarBackdrop').classList.toggle('show');
+            };
+
+            window.closeSidebar = function() {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebarBackdrop').classList.remove('show');
+            };
+
+            window.toggleDetail = function(id) {
+                document.getElementById(id).classList.toggle('show');
+            };
+
+            function setBadge(id, secure) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                el.className = 'status-badge ' + (secure ? 'secure' : 'vuln');
+                el.innerHTML = `<span class="s-dot"></span>${secure ? '<i class="fa-solid fa-check-circle"></i> Secure Mode Active' : '<i class="fa-solid fa-circle-exclamation"></i> Vulnerable Mode Active'}`;
+            }
+
+            function show(id, v) {
+                const e = document.getElementById(id);
+                if(e) e.style.display = v ? '' : 'none';
+            }
+
+            function hideResults(...ids) {
+                ids.forEach(id => {
+                    const e = document.getElementById(id);
+                    if(e) e.classList.remove('show');
+                });
+            }
+
+            function showResult(elId, msg, isSuccess) {
+                const el = document.getElementById(elId);
+                if(!el) return;
+                el.innerHTML = `<div class="result-head"><i class="fa-solid fa-${isSuccess ? 'check-circle' : 'circle-exclamation'}"></i> ${isSuccess ? 'SUCCESS' : 'WARNING'}</div><p>${msg}</p>`;
+                el.className = `result ${isSuccess ? 'success' : 'attack'} show`;
+                el.style.display = 'block';
+            }
+
+            // ════════════════ SIDEBAR ════════════════
+            function renderSidebar(tab) {
+                const s = scenariosData[tab];
+                if(!s) { document.getElementById('sidebarContent').style.display='none'; document.getElementById('sidebarLoading').style.display='flex'; return; }
+                document.getElementById('sidebarLoading').style.display='none';
+                document.getElementById('sidebarError').style.display='none';
+                const content = document.getElementById('sidebarContent'); content.style.display='block';
+                const cvssCells = s.cvss.map(([k,v,lvl]) => `<div class="cvss-row"><span class="cvss-label">${k}</span><span class="cvss-val ${lvl}">${v}</span></div>`).join('');
+                content.innerHTML = `
+                    <div class="sidebar-section">
+                        <div class="sidebar-label">${s.label}</div>
+                        <div class="scenario-title">${s.title}</div>
+                        <div class="scenario-desc">${s.desc}</div>
+                    </div>
+                    <div class="sidebar-section">
+                        <div class="info-card danger">
+                            <div class="info-card-head"><i class="fa-solid fa-circle-exclamation"></i> ${s.vuln.head}</div>
+                            <p>${s.vuln.body}</p>
+                        </div>
+                        <div class="info-card secure">
+                            <div class="info-card-head"><i class="fa-solid fa-check-circle"></i> ${s.fix.head}</div>
+                            <p>${s.fix.body}</p>
+                        </div>
+                    </div>
+                    <div class="sidebar-section">
+                        <div class="cvss-block">
+                            <div class="cvss-title"><i class="fa-solid fa-chart-simple"></i> Security Metrics</div>
+                            ${cvssCells}
+                        </div>
+                    </div>`;
+            }
+
+            // ════════════════ TAB REFRESH ════════════════
+            async function refreshTab(tab) {
+                const s = mode==='secure';
+                if(tab==='sql') {
+                    setBadge('sql-badge', s); show('sql-alert-v', !s); show('sql-alert-s', s);
+                    hideResults('sql-r-attack','sql-r-secure','sql-r-legit');
+                    document.getElementById('sql-user').value = '';
+                    if(phpCodeData.sql) {
+                        document.getElementById('sql-code-lbl').textContent = s ? 'PHP — Secure: PDO Prepared Statement' : 'PHP — Vulnerable String Concatenation';
+                        document.getElementById('sql-code-pre').innerHTML = phpCodeData.sql[s?'secure':'vuln'];
+                    }
+                } else if(tab==='bac') {
+                    setBadge('bac-badge', s); show('bac-alert-v', !s); show('bac-alert-s', s);
+                    show('bac-reveal', false); show('bac-blocked', false);
+                    bacToggled = false;
+                    document.getElementById('bacParam').textContent = '?role=employee';
+                    document.getElementById('bacParam').className = 'url-param';
+                    document.getElementById('bac-role-lbl').textContent = 'Employee View';
+                    if(phpCodeData.bac) {
+                        document.getElementById('bac-code-lbl').textContent = s ? 'PHP — Secure: Session-Based Access Control' : 'PHP — Vulnerable URL-Trusted Access Control';
+                        document.getElementById('bac-code-pre').innerHTML = phpCodeData.bac[s?'secure':'vuln'];
+                    }
+                } else if(tab==='xss') {
+                    setBadge('xss-badge', s); show('xss-alert-v', !s); show('xss-alert-s', s);
+                    document.getElementById('xss-board').innerHTML = `
+                        <li class="notice-item"><div class="notice-meta">s.chen · 2 hours ago</div><div class="notice-content">Reminder: Town Hall meeting this Friday at 2pm in Main Conference Room.</div></li>
+                        <li class="notice-item"><div class="notice-meta">m.webb · 1 hour ago</div><div class="notice-content">The new GlobalVPN client v3.1 has been deployed to all machines.</div></li>`;
+                    document.getElementById('xss-input').value = '';
+                    if(phpCodeData.xss) {
+                        document.getElementById('xss-code-lbl').textContent = s ? 'PHP — Secure: htmlspecialchars + HttpOnly' : 'PHP — Vulnerable Raw Output & Cookie Config';
+                        document.getElementById('xss-code-pre').innerHTML = phpCodeData.xss[s?'secure':'vuln'];
+                    }
+                } else if (tab === 'crypto') {
+        setBadge('crypto-badge', s);
+        show('crypto-alert-v', !s);
+        show('crypto-alert-s', s);
+        await buildCryptoTable(s);
+        const codePre = document.getElementById('crypto-code-pre');
+        const label = document.getElementById('crypto-code-lbl');
+        if (phpCodeData.crypto) {
+            label.textContent = s ? 'PHP — Secure: SHA-512 Hashing' : 'PHP — Vulnerable Plain Text Password Storage';
+            codePre.innerHTML = phpCodeData.crypto[s ? 'secure' : 'vuln'];
+        }
+                } else if(tab==='authlab') {
+                    refreshAuthLabUI(s);
+                }
+            }
+
+            function refreshAuthLabUI(isSecure) {
+                const badge = document.getElementById('authlab-badge');
+                if(badge) {
+                    badge.className = `status-badge ${isSecure ? 'secure' : 'vuln'}`;
+                    badge.innerHTML = `<span class="s-dot"></span>${isSecure ? '<i class="fa-solid fa-check-circle"></i> Secure Mode Active' : '<i class="fa-solid fa-triangle-exclamation"></i> Vulnerable Mode Active — Attacks succeed'}`;
+                }
+                show('authlab-alert-v', !isSecure); show('authlab-alert-s', isSecure);
+                ['jwt-result','totp-result','signature-result','csrf-result'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) { el.style.display='none'; el.classList.remove('show'); }
+                });
+                document.getElementById('jwt-token-display').textContent = '(no token generated)';
+                document.getElementById('jwt-verify-input').value = '';
+                document.getElementById('totp-code').value = '';
+            }
+
+            // ════════════════ INTERACTIONS Tabs 1-4 ════════════════
+            window.doSQL = function() {
+                const u = document.getElementById('sql-user').value.trim();
+                hideResults('sql-r-attack','sql-r-secure','sql-r-legit');
+                const isPayload = /['"]|\bor\b|--|;/i.test(u);
+                if(mode==='vuln') document.getElementById(isPayload ? 'sql-r-attack' : 'sql-r-legit').classList.add('show');
+                else document.getElementById(isPayload ? 'sql-r-secure' : 'sql-r-legit').classList.add('show');
+            };
+
+            window.doBAC = function() {
+                const paramEl = document.getElementById('bacParam');
+                if(!bacToggled) {
+                    paramEl.textContent = '?role=admin';
+                    paramEl.className = 'url-attack';
+                    bacToggled = true;
+                    setTimeout(() => {
+                        if(mode==='vuln') { show('bac-reveal', true); document.getElementById('bac-role-lbl').textContent = 'Admin View <i class="fa-solid fa-bolt"></i>'; buildSalaryTable(); }
+                        else show('bac-blocked', true);
+                    }, 380);
+                } else {
+                    paramEl.textContent = '?role=employee'; paramEl.className = 'url-param';
+                    bacToggled = false; show('bac-reveal', false); show('bac-blocked', false);
+                    document.getElementById('bac-role-lbl').textContent = 'Employee View';
+                }
+            };
+
+            window.doXSS = function() {
+                const raw = document.getElementById('xss-input').value;
+                if(!raw.trim()) return;
+                const board = document.getElementById('xss-board');
+                const li = document.createElement('li'); li.className = 'notice-item';
+                const meta = document.createElement('div'); meta.className = 'notice-meta'; meta.textContent = 'you · just now';
+                const content = document.createElement('div');
+                const hasScript = /<script|onerror|javascript:/i.test(raw);
+                if(mode==='vuln' && hasScript) {
+                    content.className = 'notice-content injected';
+                    content.textContent = raw + '  ← injected as raw HTML';
+                    setTimeout(() => {
+                        document.getElementById('cookieVal').textContent = 'PHPSESSID=7c3a1f8e2b9d4e0a; admin_token=eyJhbGciOiJIUzI1NiJ9...';
+                        document.getElementById('cookiePopup').classList.add('show');
+                    }, 500);
+                } else {
+                    content.className = 'notice-content';
+                    const safe = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                    content.innerHTML = safe;
+                    if(mode==='secure' && hasScript) content.innerHTML += ' <span style="color:var(--accent);font-size:11px;font-family:var(--mono);margin-left:6px">[escaped]</span>';
+                }
+                li.appendChild(meta); li.appendChild(content);
+                board.appendChild(li);
+                document.getElementById('xss-input').value = '';
+            };
+
+            async function buildCryptoTable(isSecure) {
+    const tbody = document.getElementById('crypto-tbody');
+    if (!employeesData.length) {
+        tbody.innerHTML = '<tr><td colspan="4"><i class="fa-solid fa-circle-exclamation"></i> No data loaded</td></tr>';
+        return;
+    }
+
+    const rows = await Promise.all(employeesData.map(async (e) => {
+        let hashDisplay = '';
+        if (isSecure) {
+            const msgBuffer = new TextEncoder().encode(e.pw);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            hashDisplay = `<span class="hash-pw">${hexHash.slice(0, 32)}…<span style="opacity:0.5">${hexHash.slice(32, 48)}…</span></span>`;
+        } else {
+            hashDisplay = `<span class="plain-pw">${e.pw}</span>`;
+        }
+
+        return `
+            <tr>
+                <td style="font-family:var(--mono);font-size:12.5px;color:var(--text)">${e.u}</td>
+                <td><span class="role-pill ${e.r === 'admin' ? 'admin' : 'emp'}">${e.r}</span></td>
+                <td>${hashDisplay}</td>
+                <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${e.d}</td>
+            </tr>`;
+    }));
+
+    tbody.innerHTML = rows.join('');
+}
+
+            function buildSalaryTable() {
+                const table = document.getElementById('bac-salary-table');
+                if(!table || !employeesData.length) return;
+                table.innerHTML = `
+                    <thead><tr><th>Employee</th><th>Department</th><th>Annual Salary</th><th>Access Level</th></tr></thead>
+                    <tbody>${employeesData.map(e => `
+                        <tr>
+                            <td>${e.u==='Shahmeer H'?e.u:(e.u==='admin'?'Sarah Chen':e.u)}</td>
+                            <td>${e.r==='admin'?'C-Suite':'Marketing'}</td>
+                            <td style="color:var(--warn);font-family:var(--mono)">${e.r==='admin'?'PKR.185,000':'PKR.42,000'}</td>
+                            <td><span class="role-pill ${e.r}">${e.r}</span></td>
+                        </tr>`).join('')}</tbody>`;
+            }
+
+            // ════════════════ AUTH LAB UTILS ════════════════
+            function base64url(str) { return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+            function base64urlDecode(b64) { return atob(b64.replace(/-/g,'+').replace(/_/g,'/')); }
+            async function hmacSign(secret, data) {
+                const encoder = new TextEncoder();
+                const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
+                const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+                return base64url(String.fromCharCode(...new Uint8Array(sig)));
+            }
+
+            window.generateJWT = async function() {
+                const sub = document.getElementById('jwt-sub').value;
+                const header = { alg:'HS256', typ:'JWT' };
+                const payload = { sub, iat: Math.floor(Date.now()/1000), exp: Math.floor(Date.now()/1000)+3600 };
+                const encodedHeader = base64url(JSON.stringify(header));
+                const encodedPayload = base64url(JSON.stringify(payload));
+                const secret = mode==='secure' ? jwtStrongSecret : jwtWeakSecret;
+                const signature = await hmacSign(secret, `${encodedHeader}.${encodedPayload}`);
+                const jwt = `${encodedHeader}.${encodedPayload}.${signature}`;
+                document.getElementById('jwt-token-display').innerHTML = `<strong>JWT:</strong><br>${jwt}`;
+                document.getElementById('jwt-verify-input').value = jwt;
+                document.getElementById('jwt-result').style.display = 'none';
+            };
+
+            window.verifyJWT = async function() {
+                const token = document.getElementById('jwt-verify-input').value.trim();
+                if(!token) return;
+                const parts = token.split('.');
+                if(parts.length !== 3) { showResult('jwt-result','Invalid JWT format',false); return; }
+                const [headerB64, payloadB64, sigB64] = parts;
+                let header;
+                try { header = JSON.parse(base64urlDecode(headerB64)); } catch(e) { showResult('jwt-result','Invalid header',false); return; }
+                if(mode==='secure') {
+                    if(header.alg==='none' || !header.alg || header.alg!=='HS256') { showResult('jwt-result','<i class="fa-solid fa-shield"></i> BLOCKED: Insecure algorithm (alg:none) rejected',false); return; }
+                    const expectedSig = await hmacSign(jwtStrongSecret, `${headerB64}.${payloadB64}`);
+                    if(sigB64 !== expectedSig) { showResult('jwt-result','<i class="fa-solid fa-xmark"></i> Signature invalid — token tampered or wrong secret',false); return; }
+                    showResult('jwt-result','<i class="fa-solid fa-check-circle"></i> Secure: JWT signature valid + algorithm enforced',true);
+                } else {
+                    if(header.alg==='none') { showResult('jwt-result','<i class="fa-solid fa-triangle-exclamation"></i> VULNERABLE: alg:none accepted — token forged without signature! Attack succeeded',false); return; }
+                    const expectedSig = await hmacSign(jwtWeakSecret, `${headerB64}.${payloadB64}`);
+                    if(sigB64 !== expectedSig) { showResult('jwt-result','<i class="fa-solid fa-xmark"></i> Invalid signature',false); }
+                    else { showResult('jwt-result','<i class="fa-solid fa-triangle-exclamation"></i> Weak secret accepted — token valid but vulnerable to brute force',false); }
+                }
+            };
+
+            window.regenerateTotpSecret = function() {
+                totpSecret = 'TOTP'+Math.random().toString(36).substring(2,10).toUpperCase();
+                document.getElementById('totp-secret').innerText = totpSecret;
+            };
+
+            function generateTOTP(secret) {
+                const epoch = Math.floor(Date.now()/30000);
+                let hash=0; for(let i=0;i<secret.length;i++) hash=((hash<<5)-hash)+secret.charCodeAt(i);
+                return (Math.abs(hash+epoch)%1000000).toString().padStart(6,'0');
+            }
+
+            window.verifyTOTP = function() {
+                const userOtp = document.getElementById('totp-code').value;
+                const correctOtp = generateTOTP(totpSecret);
+                if(mode==='secure') {
+                    if(userOtp===correctOtp) showResult('totp-result','<i class="fa-solid fa-check-circle"></i> 2FA verified — Access Granted (Secure Mode)',true);
+                    else showResult('totp-result','<i class="fa-solid fa-xmark"></i> Invalid OTP — Access Denied',false);
+                } else {
+                    if(userOtp===correctOtp) showResult('totp-result','<i class="fa-solid fa-triangle-exclamation"></i> 2FA passed but in vulnerable mode, an attacker could bypass OTP requirement entirely',false);
+                    else showResult('totp-result','<i class="fa-solid fa-triangle-exclamation"></i> Weak Mode: OTP failure still granted demo access (bypass simulation)',false);
+                }
+            };
+
+            window.generateKeyAndSign = async function() {
+                const msg = document.getElementById('sign-message').value;
+                keyPair = await crypto.subtle.generateKey({ name:'ECDSA', namedCurve:'P-256' }, true, ['sign','verify']);
+                const encoder = new TextEncoder();
+                const signature = await crypto.subtle.sign({ name:'ECDSA', hash:'SHA-256' }, keyPair.privateKey, encoder.encode(msg));
+                const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+                localStorage.setItem('sig_msg', msg); localStorage.setItem('sig_val', sigB64);
+                showResult('signature-result',`<i class="fa-solid fa-lock"></i> Message signed. Signature (b64): ${sigB64.substring(0,32)}... Use "Verify" to check integrity.`,true);
+            };
+
+            window.verifySignature = async function() {
+                if(!keyPair && !localStorage.getItem('sig_msg')) { showResult('signature-result','No signature found, generate keypair first',false); return; }
+                const msg = document.getElementById('sign-message').value;
+                const storedMsg = localStorage.getItem('sig_msg')||msg;
+                const sigB64 = localStorage.getItem('sig_val');
+                if(!sigB64 || storedMsg!==msg) {
+                    if(mode==='vuln') showResult('signature-result','<i class="fa-solid fa-triangle-exclamation"></i> Mode vulnerable: No verification required (tamper ignored) but should fail in real world',false);
+                    else showResult('signature-result','<i class="fa-solid fa-xmark"></i> Tamper detected! Message changed after signing. Signature invalid.',false);
+                    return;
+                }
+                if(!keyPair) { showResult('signature-result','Keypair missing — regenerate',false); return; }
+                const signature = Uint8Array.from(atob(sigB64),c=>c.charCodeAt(0));
+                const encoder = new TextEncoder();
+                const isValid = await crypto.subtle.verify({ name:'ECDSA', hash:'SHA-256' }, keyPair.publicKey, signature, encoder.encode(msg));
+                if(isValid) showResult('signature-result','<i class="fa-solid fa-check-circle"></i> Digital signature valid — integrity confirmed (PKI chain trusted)',true);
+                else showResult('signature-result','<i class="fa-solid fa-xmark"></i> Signature invalid — tampering or wrong key',false);
+            };
+
+            window.performTransfer = function() {
+                const account = document.getElementById('csrf-account').value;
+                const amount = document.getElementById('csrf-amount').value;
+                if(mode==='secure') {
+                    const tokenHeader = prompt('Secure Mode: Provide CSRF token (anti-CSRF)','csrf_demo_token_xyz');
+                    if(tokenHeader !== csrfTokenStore) { showResult('csrf-result','<i class="fa-solid fa-xmark"></i> CSRF validation failed — transaction blocked (token missing/invalid)',false); return; }
+                    showResult('csrf-result','<i class="fa-solid fa-check-circle"></i> Secure transfer: $'+amount+' to '+account+' — CSRF token valid',true);
+                } else {
+                    showResult('csrf-result','<i class="fa-solid fa-triangle-exclamation"></i> VULNERABLE: Transferred $'+amount+' to '+account+' — no anti-CSRF protection, malicious site could forge this request.',false);
+                }
+            };
+
+            window.simulateCSRFAttack = function() {
+                if(mode==='secure') showResult('csrf-result','<i class="fa-solid fa-shield"></i> Secure mode: CSRF token required — forged request blocked',true);
+                else showResult('csrf-result','<i class="fa-solid fa-fire"></i> CSRF Attack succeeded! Attacker site triggered fund transfer without user consent (missing token).',false);
+            };
+
+            // ════════════════ INIT ════════════════
+            async function initApp() {
+                try {
+                    const [scenarios, phpCodes, employees, anomalies] = await Promise.all([fetchScenarios(), fetchPhpCode(), fetchEmployees(), fetchAnomalies()]);
+                    scenariosData = scenarios; phpCodeData = phpCodes; employeesData = employees;
+                    const anomalyList = document.getElementById('anomaly-list');
+                    if(anomalyList) {
+                        anomalyList.innerHTML = anomalies.map(a => `
+                            <div class="anomaly-item ${a.flagged?'flagged':(a.suspect?'suspect':'')}">
+                                <div class="anomaly-ico ${a.level==='high'?'danger':(a.level==='medium'?'warn':'safe')}">${a.icon}</div>
+                                <div class="anomaly-body"><div class="anomaly-user">${a.user}</div><div class="anomaly-detail">${a.detail}</div></div>
+                                <div style="text-align:right;flex-shrink:0">
+                                    <div class="score-circle ${a.level==='high'?'danger':(a.level==='medium'?'warn':'safe')}" style="width:54px;height:54px;margin-bottom:5px">
+                                        <div class="score-num" style="font-size:16px">${a.risk.toFixed(2)}</div><div class="score-lbl">risk</div>
+                                    </div>
+                                    <div class="risk-badge ${a.level}">${a.level.toUpperCase()}</div>
+                                </div>
+                            </div>`).join('');
+                    }
+                    document.getElementById('ai-code-pre').innerHTML = `<span class="cm"># Gradient Boosted Classifier — Feature Extraction</span>\n<span class="kw">def</span> <span class="fn">score_login</span>(event):\n    features = {\n        <span class="str">"geo_velocity_kph"</span>:   calc_velocity(prev_ip, event.ip),\n        <span class="hl-good">"hour_zscore":        (event.hour - user_mean_hour) / user_std,</span>\n        <span class="str">"agent_changed"</span>:      int(event.ua != user_known_ua),\n        <span class="hl-bad">"failed_rate_5min":   count_fails(user, minutes=5),</span>\n        <span class="str">"ip_blacklisted"</span>:     ip_in_blacklist(event.ip),\n    }\n    risk_score = model.predict_proba([features])[<span class="str">0</span>][<span class="str">1</span>]\n    <span class="kw">if</span> risk_score >= <span class="str">0.85</span>:\n        block_session(event); alert_soc(event)\n    <span class="kw">return</span> risk_score`;
+                    document.getElementById('jwt-sub').value = 'admin';
+                    document.getElementById('totp-secret').innerText = totpSecret;
+                    renderSidebar('sql');
+                    await refreshTab('sql');
+                } catch(err) {
+                    document.getElementById('sidebarLoading').style.display='none';
+                    document.getElementById('sidebarError').style.display='block';
+                    console.error('Failed to load data', err);
+                }
+            }
+            initApp();
+        })();
+    </script>
+</body>
+</html>
